@@ -25,11 +25,11 @@ Resulting standalone .jar can be found in `build/uberjar`.
 
 ## Running as service on Systemd
 
+The author is an amateur programmer and sysadmin, and only knows about systemd service files from what he learned on the internet, so this might not be the best example or technically clean, but it works:
+
 Move the .jar file to somewhere where you can remember, like `usr/local/bin`, and `chown` to root if you want, with the right permissions (755?).
 
 Create a file in `/etc/systemd/system`, `update-godaddy.service`
-
-The author only knows about systemd service files from what he learned on the internet, so this might not be the best example, but it works:
 
 ```
 [Unit]
