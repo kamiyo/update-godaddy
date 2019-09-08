@@ -101,7 +101,7 @@
 (defn usage [options-summary]
   (->> ["This program checks your server IP every interval and sends an API request to GoDaddy to update the DNS record"
         ""
-        "Usage: ENV_VARS=env_vars java -jar update-godaddy.jar [options] record domain"
+        "Usage: [ENV_VARS=env_vars] java -jar update-godaddy.jar [options] record domain"
         ""
         "Options:"
         options-summary
@@ -121,9 +121,15 @@
       (:help options) {:exit-message (usage summary) :ok? true}
       errors {:exit-message (error-msg errors)}
       (and (nil? (:ipv4 options))
-           (nil? (:ipv6 options))) {:exit-message "Specify at least one of -4 or -6."}
+           (nil? (:ipv6 options))) {:exit-message (clojure.string/join
+                                                   "\n"
+                                                   ["Specify at least one of -4 or -6."
+                                                    (usage summary)])}
       (or (nil? record)
-          (nil? domain)) {:exit-message "Must include record and domain."}
+          (nil? domain)) {:exit-message (clojure.string/join
+                                         "\n"
+                                         ["Must include record and domain."
+                                          (usage summary)])}
       :else {:options options
              :arguments arguments})))
 
@@ -135,17 +141,18 @@
   "Entry. This utility checks the server's ip address at a specified interval,
   and if needed updates a cache file and sends a put request to GoDaddy's DNS API."
   [& args]
-  (if (or (nil? GDKEY)
-          (nil? GDSECRET))
-    (exit 1 "Godaddy key and secret are not set in env or java system var."))
   (let [{:keys [options arguments exit-message ok?]} (validate-args args)]
     (if exit-message
       (exit (if ok? 0 1) exit-message)
-      (let [{:keys [ipv4 ipv6 api api6 every]} options
-            [record domain] arguments
-            interval (* 1000 every)]
-        (.addShutdownHook (Runtime/getRuntime) (Thread. #(at-at/stop-and-reset-pool! my-pool)))
-        (if (boolean ipv4) 
-          (at-at/every interval #(check-record "A" record domain api) my-pool))
-        (if (boolean ipv6)
-          (at-at/every interval #(check-record "AAAA" record domain api6) my-pool))))))
+      (do 
+        (if (or (nil? GDKEY)
+                (nil? GDSECRET))
+          (exit 1 "Godaddy key and secret are not set in env or java system var."))
+        (let [{:keys [ipv4 ipv6 api api6 every]} options
+              [record domain] arguments
+              interval (* 1000 every)]
+          (.addShutdownHook (Runtime/getRuntime) (Thread. #(at-at/stop-and-reset-pool! my-pool)))
+          (if (boolean ipv4) 
+            (at-at/every interval #(check-record "A" record domain api) my-pool))
+          (if (boolean ipv6)
+            (at-at/every interval #(check-record "AAAA" record domain api6) my-pool)))))))
