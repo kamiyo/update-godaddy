@@ -1,4 +1,4 @@
-(defproject update-godaddy "1.0.0"
+(defproject update-godaddy "1.0.1"
   :description "Update DNS entries on GoDaddy based on detected IP"
   :url "https://github.com/kamiyo/update-godaddy"
   :license {:name "EPL-2.0"
